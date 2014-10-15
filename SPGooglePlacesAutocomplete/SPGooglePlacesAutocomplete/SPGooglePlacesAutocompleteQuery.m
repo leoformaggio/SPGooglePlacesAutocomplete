@@ -23,7 +23,7 @@
         self.key = apiKey;
         self.offset = NSNotFound;
         self.location = CLLocationCoordinate2DMake(-1, -1);
-        self.radius = 500;
+        self.radius = 0;
         self.types = SPPlaceTypeNone;
     }
     return self;
@@ -43,7 +43,7 @@
     if (self.location.latitude != -1) {
         [url appendFormat:@"&location=%f,%f", self.location.latitude, self.location.longitude];
     }
-    if (self.radius != NSNotFound) {
+    if (self.radius > 0) {
         [url appendFormat:@"&radius=%f", self.radius];
     }
     if (self.language) {
