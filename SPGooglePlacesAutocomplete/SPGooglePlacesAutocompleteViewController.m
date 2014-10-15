@@ -20,27 +20,21 @@
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        searchQuery = [[SPGooglePlacesAutocompleteQuery alloc] init];
-        searchQuery.radius = 100.0;
-        shouldBeginEditing = YES;
+        _searchQuery = [[SPGooglePlacesAutocompleteQuery alloc] initWithApiKey:@"YOUR-KEY"];
+        _searchQuery.radius = 100.0;
+        _shouldBeginEditing = YES;
     }
     return self;
 }
 
 - (void)viewDidLoad {
+	[super viewDidLoad];
     self.searchDisplayController.searchBar.placeholder = @"Search or Address";
 }
 
 - (void)viewDidUnload {
     [self setMapView:nil];
     [super viewDidUnload];
-}
-
-- (void)dealloc {
-    [selectedPlaceAnnotation release];
-    [mapView release];
-    [searchQuery release];
-    [super dealloc];
 }
 
 - (IBAction)recenterMapToUserLocation:(id)sender {
@@ -60,29 +54,32 @@
 #pragma mark UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [searchResultPlaces count];
+    return [_searchResultPlaces count];
 }
 
 - (SPGooglePlacesAutocompletePlace *)placeAtIndexPath:(NSIndexPath *)indexPath {
-    return [searchResultPlaces objectAtIndex:indexPath.row];
+    return [_searchResultPlaces objectAtIndex:indexPath.row];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSString *cellIdentifier = @"SPGooglePlacesAutocompleteCell";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
     if (!cell) {
-        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:cellIdentifier];
+		cell.textLabel.font = [UIFont fontWithName:@"GillSans" size:16.0];
+		cell.detailTextLabel.font = [UIFont fontWithName:@"GillSans" size:12.0];
     }
-    
-    cell.textLabel.font = [UIFont fontWithName:@"GillSans" size:16.0];
-    cell.textLabel.text = [self placeAtIndexPath:indexPath].name;
+	
+	SPGooglePlacesAutocompletePlace *place = [self placeAtIndexPath:indexPath];
+    cell.textLabel.text = place.title;
+	cell.detailTextLabel.text = place.subtitle;
     return cell;
 }
 
 #pragma mark -
 #pragma mark UITableViewDelegate
 
-- (void)recenterMapToPlacemark:(CLPlacemark *)placemark {
+- (void)recenterMapToPlace:(SPGooglePlace *)place {
     MKCoordinateRegion region;
     MKCoordinateSpan span;
     
@@ -90,19 +87,19 @@
     span.longitudeDelta = 0.02;
     
     region.span = span;
-    region.center = placemark.location.coordinate;
+    region.center = place.location.coordinate;
     
     [self.mapView setRegion:region];
 }
 
-- (void)addPlacemarkAnnotationToMap:(CLPlacemark *)placemark addressString:(NSString *)address {
-    [self.mapView removeAnnotation:selectedPlaceAnnotation];
-    [selectedPlaceAnnotation release];
-    
-    selectedPlaceAnnotation = [[MKPointAnnotation alloc] init];
-    selectedPlaceAnnotation.coordinate = placemark.location.coordinate;
-    selectedPlaceAnnotation.title = address;
-    [self.mapView addAnnotation:selectedPlaceAnnotation];
+- (void)addPlaceAnnotationToMap:(SPGooglePlace *)place {
+    [self.mapView removeAnnotation:_selectedPlaceAnnotation];
+	
+    _selectedPlaceAnnotation = [[MKPointAnnotation alloc] init];
+    _selectedPlaceAnnotation.coordinate = place.location.coordinate;
+    _selectedPlaceAnnotation.title = place.title;
+	_selectedPlaceAnnotation.subtitle = place.subtitle;
+    [self.mapView addAnnotation:_selectedPlaceAnnotation];
 }
 
 - (void)dismissSearchControllerWhileStayingActive {
@@ -119,30 +116,29 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     SPGooglePlacesAutocompletePlace *place = [self placeAtIndexPath:indexPath];
-    [place resolveToPlacemark:^(CLPlacemark *placemark, NSString *addressString, NSError *error) {
-        if (error) {
-            SPPresentAlertViewWithErrorAndTitle(error, @"Could not map selected Place");
-        } else if (placemark) {
-            [self addPlacemarkAnnotationToMap:placemark addressString:addressString];
-            [self recenterMapToPlacemark:placemark];
-            [self dismissSearchControllerWhileStayingActive];
-            [self.searchDisplayController.searchResultsTableView deselectRowAtIndexPath:indexPath animated:NO];
-        }
-    }];
+	[place resolveToGooglePlace:^(SPGooglePlace *place, NSError *error) {
+		if (error) {
+			SPPresentAlertViewWithErrorAndTitle(error, @"Could not map selected Place");
+		} else if (place) {
+			[self addPlaceAnnotationToMap:place];
+			[self recenterMapToPlace:place];
+			[self dismissSearchControllerWhileStayingActive];
+			[self.searchDisplayController.searchResultsTableView deselectRowAtIndexPath:indexPath animated:NO];
+		}
+	}];
 }
 
 #pragma mark -
 #pragma mark UISearchDisplayDelegate
 
 - (void)handleSearchForSearchString:(NSString *)searchString {
-    searchQuery.location = self.mapView.userLocation.coordinate;
-    searchQuery.input = searchString;
-    [searchQuery fetchPlaces:^(NSArray *places, NSError *error) {
+    _searchQuery.location = self.mapView.userLocation.coordinate;
+    _searchQuery.input = searchString;
+    [_searchQuery fetchPlaces:^(NSArray *places, NSError *error) {
         if (error) {
             SPPresentAlertViewWithErrorAndTitle(error, @"Could not fetch Places");
         } else {
-            [searchResultPlaces release];
-            searchResultPlaces = [places retain];
+			_searchResultPlaces = places;
             [self.searchDisplayController.searchResultsTableView reloadData];
         }
     }];
@@ -161,14 +157,14 @@
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
     if (![searchBar isFirstResponder]) {
         // User tapped the 'clear' button.
-        shouldBeginEditing = NO;
+        _shouldBeginEditing = NO;
         [self.searchDisplayController setActive:NO];
-        [self.mapView removeAnnotation:selectedPlaceAnnotation];
+        [self.mapView removeAnnotation:_selectedPlaceAnnotation];
     }
 }
 
 - (BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar {
-    if (shouldBeginEditing) {
+    if (_shouldBeginEditing) {
         // Animate in the table view.
         NSTimeInterval animationDuration = 0.3;
         [UIView beginAnimations:nil context:NULL];
@@ -178,8 +174,8 @@
         
         [self.searchDisplayController.searchBar setShowsCancelButton:YES animated:YES];
     }
-    BOOL boolToReturn = shouldBeginEditing;
-    shouldBeginEditing = YES;
+    BOOL boolToReturn = _shouldBeginEditing;
+    _shouldBeginEditing = YES;
     return boolToReturn;
 }
 
@@ -193,7 +189,7 @@
     static NSString *annotationIdentifier = @"SPGooglePlacesAutocompleteAnnotation";
     MKPinAnnotationView *annotationView = (MKPinAnnotationView *)[self.mapView dequeueReusableAnnotationViewWithIdentifier:annotationIdentifier];
     if (!annotationView) {
-        annotationView = [[[MKPinAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:annotationIdentifier] autorelease];
+        annotationView = [[MKPinAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:annotationIdentifier];
     }
     annotationView.animatesDrop = YES;
     annotationView.canShowCallout = YES;
@@ -207,7 +203,7 @@
 
 - (void)mapView:(MKMapView *)mapView didAddAnnotationViews:(NSArray *)views {
     // Whenever we've dropped a pin on the map, immediately select it to present its callout bubble.
-    [self.mapView selectAnnotation:selectedPlaceAnnotation animated:YES];
+    [self.mapView selectAnnotation:_selectedPlaceAnnotation animated:YES];
 }
 
 - (void)annotationDetailButtonPressed:(id)sender {

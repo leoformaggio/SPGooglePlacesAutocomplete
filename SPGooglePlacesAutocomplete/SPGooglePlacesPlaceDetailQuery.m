@@ -14,18 +14,12 @@
 
 @implementation SPGooglePlacesPlaceDetailQuery
 
-@synthesize reference, sensor, key, language, resultBlock;
-
-+ (SPGooglePlacesPlaceDetailQuery *)query {
-    return [[[self alloc] init] autorelease];
-}
-
-- (id)init {
+- (id)initWithApiKey:(NSString *)apiKey {
     self = [super init];
     if (self) {
         // Setup default property values.
         self.sensor = YES;
-        self.key = kGoogleAPIKey;
+        self.key = apiKey;
     }
     return self;
 }
@@ -34,48 +28,37 @@
     return [NSString stringWithFormat:@"Query URL: %@", [self googleURLString]];
 }
 
-- (void)dealloc {
-    [googleConnection release];
-    [responseData release];
-    [reference release];
-    [key release];
-    [language release];
-    [super dealloc];
-}
-
 - (NSString *)googleURLString {
     NSMutableString *url = [NSMutableString stringWithFormat:@"https://maps.googleapis.com/maps/api/place/details/json?reference=%@&sensor=%@&key=%@",
-                            reference, SPBooleanStringForBool(sensor), key];
-    if (language) {
-        [url appendFormat:@"&language=%@", language];
+                            self.reference, SPBooleanStringForBool(self.sensor), self.key];
+    if (self.language) {
+        [url appendFormat:@"&language=%@", self.language];
     }
     return url;
 }
 
 - (void)cleanup {
-    [googleConnection release];
-    [responseData release];
-    googleConnection = nil;
-    responseData = nil;
+    _googleConnection = nil;
+    _responseData = nil;
     self.resultBlock = nil;
 }
 
 - (void)cancelOutstandingRequests {
-    [googleConnection cancel];
+    [_googleConnection cancel];
     [self cleanup];
 }
 
 - (void)fetchPlaceDetail:(SPGooglePlacesPlaceDetailResultBlock)block {
-    if (!SPEnsureGoogleAPIKey()) {
-        return;
-    }
-    
+	if (!self.key) {
+		return;
+	}
+	
     [self cancelOutstandingRequests];
     self.resultBlock = block;
     
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:[self googleURLString]]];
-    googleConnection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
-    responseData = [[NSMutableData alloc] init];
+    _googleConnection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    _responseData = [[NSMutableData alloc] init];
 }
 
 #pragma mark -
@@ -96,27 +79,27 @@
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-    if (connection == googleConnection) {
-        [responseData setLength:0];
+    if (connection == _googleConnection) {
+        [_responseData setLength:0];
     }
 }
 
 - (void)connection:(NSURLConnection *)connnection didReceiveData:(NSData *)data {
-    if (connnection == googleConnection) {
-        [responseData appendData:data];
+    if (connnection == _googleConnection) {
+        [_responseData appendData:data];
     }
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
-    if (connection == googleConnection) {
+    if (connection == _googleConnection) {
         [self failWithError:error];
     }
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-    if (connection == googleConnection) {
+    if (connection == _googleConnection) {
         NSError *error = nil;
-        NSDictionary *response = [NSJSONSerialization JSONObjectWithData:responseData options:kNilOptions error:&error];
+        NSDictionary *response = [NSJSONSerialization JSONObjectWithData:_responseData options:kNilOptions error:&error];
         if (error) {
             [self failWithError:error];
             return;

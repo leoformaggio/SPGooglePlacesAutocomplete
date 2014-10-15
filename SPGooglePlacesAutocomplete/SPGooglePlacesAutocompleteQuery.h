@@ -11,13 +11,11 @@
 #import "SPGooglePlacesAutocompleteUtilities.h"
 
 @interface SPGooglePlacesAutocompleteQuery : NSObject {
-    NSURLConnection *googleConnection;
-    NSMutableData *responseData;
+    NSURLConnection *_googleConnection;
+    NSMutableData *_responseData;
 }
 
 @property (nonatomic, copy, readonly) SPGooglePlacesAutocompleteResultBlock resultBlock;
-
-+ (SPGooglePlacesAutocompleteQuery *)query;
 
 /*!
  Pulls down places that match the query. If -fetchPlaces is called twice, the first request will be cancelled and the request will be re-issued using the current property values.
@@ -70,5 +68,10 @@
  */
 @property (nonatomic) SPGooglePlacesAutocompletePlaceType types;
 
-@end
+/*!
+ * Designated initializer
+ * Must initialize an instance with a valid Google API key
+ */
+- (id)initWithApiKey:(NSString *)apiKey;
 
+@end

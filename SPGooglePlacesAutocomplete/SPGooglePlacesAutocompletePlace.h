@@ -9,12 +9,23 @@
 #import <CoreLocation/CoreLocation.h>
 
 #import "SPGooglePlacesAutocompleteUtilities.h"
+#import "SPGooglePlace.h"
+
+@interface SPGooglePlacesAutocompletePlaceTerm : NSObject
+
+@property (nonatomic, assign, readonly) NSUInteger offset;
+@property (nonatomic, strong, readonly) NSString *value;
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
++ (NSArray *)objectsFromDictionaries:(NSArray *)dictionaries;
+
+@end
 
 @interface SPGooglePlacesAutocompletePlace : NSObject {
-    CLGeocoder *geocoder;
+    CLGeocoder *_geocoder;
 }
 
-+ (SPGooglePlacesAutocompletePlace *)placeFromDictionary:(NSDictionary *)placeDictionary;
++ (SPGooglePlacesAutocompletePlace *)placeFromDictionary:(NSDictionary *)placeDictionary apiKey:(NSString *)apiKey;
 
 /*!
  Contains the human-readable name for the returned result. For establishment results, this is usually the business name.
@@ -37,8 +48,33 @@
 @property (nonatomic, retain, readonly) NSString *identifier;
 
 /*!
+ Your application's API key. This key identifies your application for purposes of quota management. Visit the APIs Console to select an API Project and obtain your key. Maps API for Business customers must use the API project created for them as part of their Places for Business purchase. Defaults to kGoogleAPIKey.
+ */
+@property (nonatomic, strong, readonly) NSString *key;
+
+/*!
+ Contains an array of terms identifying each section of the returned description (a section of the description is generally terminated with a comma). Each entry in the array has a value field, containing the text of the term, and an offset field, defining the start position of this term in the description, measured in Unicode characters.
+*/
+@property (nonatomic, retain, readonly) NSArray *terms;
+
+/*!
  Resolves the place to a CLPlacemark, issuing  Google Place Details request if needed.
  */
 - (void)resolveToPlacemark:(SPGooglePlacesPlacemarkResultBlock)block;
+
+/*!
+ Resolves the place to a CLPlacemark, issuing  Google Place Details request if needed.
+ */
+- (void)resolveToGooglePlace:(SPGooglePlacesPlaceResultBlock)block;
+
+/*!
+ Convenience property for configuring textLabel on UITableViewCell.
+ */
+@property (nonatomic, retain, readonly) NSString *title;
+
+/*!
+ Convenience property for configuring detailTextLabel on UITableViewCell.
+ */
+@property (nonatomic, retain, readonly) NSString *subtitle;
 
 @end

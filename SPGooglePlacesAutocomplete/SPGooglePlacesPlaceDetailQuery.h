@@ -9,13 +9,11 @@
 #import "SPGooglePlacesAutocompleteUtilities.h"
 
 @interface SPGooglePlacesPlaceDetailQuery : NSObject {
-    NSURLConnection *googleConnection;
-    NSMutableData *responseData;
+    NSURLConnection *_googleConnection;
+    NSMutableData *_responseData;
 }
 
 @property (nonatomic, copy, readonly) SPGooglePlacesPlaceDetailResultBlock resultBlock;
-
-+ (SPGooglePlacesPlaceDetailQuery *)query;
 
 /*!
  Issues a Place Details request and pulls down the results. If called twice, the first request will be cancelled and the request will be re-issued using the current property values.
@@ -47,5 +45,11 @@
  The language in which to return results. See the supported list of domain languages. Note that we often update supported languages so this list may not be exhaustive. If language is not supplied, the Place service will attempt to use the native language of the domain from which the request is sent.
  */
 @property (nonatomic, retain) NSString *language;
+
+/*!
+ * Designated initializer
+ * Must initialize an instance with a valid Google API key
+ */
+- (id)initWithApiKey:(NSString *)apiKey;
 
 @end

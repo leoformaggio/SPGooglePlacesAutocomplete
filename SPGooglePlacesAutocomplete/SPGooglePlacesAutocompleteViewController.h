@@ -11,11 +11,11 @@
 @class SPGooglePlacesAutocompleteQuery;
 
 @interface SPGooglePlacesAutocompleteViewController : UIViewController <UITableViewDataSource, UITableViewDelegate, UISearchDisplayDelegate, UISearchBarDelegate, MKMapViewDelegate> {
-    NSArray *searchResultPlaces;
-    SPGooglePlacesAutocompleteQuery *searchQuery;
-    MKPointAnnotation *selectedPlaceAnnotation;
+    NSArray *_searchResultPlaces;
+    SPGooglePlacesAutocompleteQuery *_searchQuery;
+    MKPointAnnotation *_selectedPlaceAnnotation;
     
-    BOOL shouldBeginEditing;
+    BOOL _shouldBeginEditing;
 }
 
 @property (retain, nonatomic) IBOutlet MKMapView *mapView;
