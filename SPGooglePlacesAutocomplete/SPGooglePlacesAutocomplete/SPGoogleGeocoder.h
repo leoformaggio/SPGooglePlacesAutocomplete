@@ -7,7 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "SPGooglePlace.h"
+
+@class SPGooglePlace;
 
 @interface SPGoogleGeocoder : NSObject {
 	NSURLConnection *_googleConnection;

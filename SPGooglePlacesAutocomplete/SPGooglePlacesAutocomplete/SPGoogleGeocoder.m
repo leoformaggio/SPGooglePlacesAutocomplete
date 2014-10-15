@@ -8,6 +8,7 @@
 
 #import "SPGoogleGeocoder.h"
 #import "SPGooglePlacesAutocompleteUtilities.h"
+#import "SPGooglePlace.h"
 
 @interface SPGoogleGeocoder()
 @property (nonatomic, copy) void (^resultBlock)(SPGooglePlace *place, NSError *error);

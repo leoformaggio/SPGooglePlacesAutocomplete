@@ -9,7 +9,6 @@
 #import <CoreLocation/CoreLocation.h>
 
 #import "SPGooglePlacesAutocompleteUtilities.h"
-#import "SPGooglePlace.h"
 
 @interface SPGooglePlacesAutocompletePlaceTerm : NSObject
 

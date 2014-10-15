@@ -8,6 +8,7 @@
 
 #import "SPGooglePlacesAutocompletePlace.h"
 #import "SPGooglePlacesPlaceDetailQuery.h"
+#import "SPGooglePlace.h"
 
 @interface SPGooglePlacesAutocompletePlaceTerm()
 @property (nonatomic, assign) NSUInteger offset;

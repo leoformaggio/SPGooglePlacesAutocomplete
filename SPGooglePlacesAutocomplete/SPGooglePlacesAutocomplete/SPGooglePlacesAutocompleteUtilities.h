@@ -6,7 +6,6 @@
 //  Copyright (c) 2012 Stephen Poletto. All rights reserved.
 //
 
-#define kGoogleAPIKey 
 #define kGoogleAPINSErrorCode 42
 
 @class SPGooglePlace;
